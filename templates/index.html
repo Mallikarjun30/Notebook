@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes Notes Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #6366F1;
+            --background: #F8FAFC;
+            --text: #1E293B;
+            --border: #E2E8F0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background);
+            color: var(--text);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        textarea, input[type="number"], .topic-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus, input[type="number"]:focus, .topic-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.1);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--secondary);
+        }
+
+        .progress {
+            display: none;
+            padding: 1rem;
+            background: #F1F5F9;
+            border-radius: 6px;
+            margin: 1rem 0;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress.active {
+            display: flex;
+        }
+
+        .results {
+            margin-top: 2rem;
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart Notes Generator</h1>
+
+        <!-- Upload Section -->
+        <div class="section">
+            <h2><i class="fas fa-file-upload"></i> Upload PDFs</h2>
+            <div class="upload-area">
+                <input type="file" id="pdfUpload" multiple accept=".pdf" hidden>
+                <button onclick="document.getElementById('pdfUpload').click()">
+                    <i class="fas fa-cloud-upload-alt"></i> Choose PDF Files
+                </button>
+                <p id="fileList" class="file-list"></p>
+                <div id="uploadProgress" class="progress">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Processing files...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="section">
+            <h2><i class="fas fa-cog"></i> Notes Configuration</h2>
+            <div class="input-group">
+                <label for="basePrompt">Base Prompt:</label>
+                <textarea id="basePrompt" rows="4"></textarea>
+            </div>
+
+            <!-- Toggle Input Mode -->
+            <div class="input-group">
+                <label>Input Mode:</label>
+                <label style="display: flex; align-items: center; gap: 1rem;">
+                    <input type="checkbox" id="modeToggle" onchange="toggleInputMode()">
+                    <span>Use multiple inputs instead of single textarea</span>
+                </label>
+            </div>
+
+            <!-- Single Textarea Input -->
+            <div id="singleInputGroup" class="input-group">
+                <label for="topics">Topics/Questions (one per line):</label>
+                <textarea id="topics" rows="8" placeholder="Enter each topic/question on a new line"></textarea>
+            </div>
+
+            <!-- Multi Input Group -->
+            <div id="multiInputGroup" class="input-group" style="display: none;">
+                <label>Topics:</label>
+                <div id="multiInputsContainer">
+                    <textarea id="topic-input" class="topic-input" rows="2" placeholder="Topic 1"></textarea>
+                </div>
+                <button type="button" onclick="addTopicInput()" style="margin-top: 1rem;">
+                    ➕ Add More Topics
+                </button>
+            </div>
+
+
+            <div class="input-group">
+                <label for="batchSize">Topics per Batch:</label>
+                <input type="number" id="batchSize" value="3" min="1">
+            </div>
+
+            <button onclick="generateNotes()">
+                <i class="fas fa-magic"></i> Generate Notes
+            </button>
+            <div id="generationProgress" class="progress">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Generating notes...</span>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="section">
+            <h2><i class="fas fa-file-alt"></i> Generated Notes</h2>
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('pdfUpload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = Array.from(files).map(file =>
+                `<div class="file-item">✅ ${file.name}</div>`
+            ).join('');
+            uploadFiles();
+        });
+
+        async function uploadFiles() {
+            const progress = document.getElementById('uploadProgress');
+            const files = document.getElementById('pdfUpload').files;
+
+            try {
+                progress.style.display = 'flex';
+                const formData = new FormData();
+                for (let file of files) {
+                    formData.append('files', file);
+                }
+
+                const response = await fetch('http://localhost:5000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('fileList').innerHTML += 
+                    `<div class="success-message">✅ ${data.message}</div>`;
+
+            } catch (error) {
+                document.getElementById('fileList').innerHTML += 
+                    `<div class="error-message">⚠️ ${error.message}</div>`;
+            } finally {
+                progress.style.display = 'none';
+            }
+        }
+
+        function toggleInputMode() {
+            const useMultiple = document.getElementById('modeToggle').checked;
+            document.getElementById('singleInputGroup').style.display = useMultiple ? 'none' : 'block';
+            document.getElementById('multiInputGroup').style.display = useMultiple ? 'block' : 'none';
+        }
+
+        // Function to add new topic input field
+        function addTopicInput() {
+            const container = document.getElementById('multiInputsContainer');
+            const newTextArea = document.createElement('textarea');
+            newTextArea.classList.add('topic-input');
+            newTextArea.id = 'topic-input';
+            newTextArea.setAttribute('rows', '2');
+            newTextArea.placeholder = `Topic ${container.children.length + 1}`;
+            container.appendChild(newTextArea);
+        }
+
+
+        async function generateNotes() {
+            const progress = document.getElementById('generationProgress');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                progress.classList.add('active');
+                resultsDiv.innerHTML = '<div class="status-message">Starting generation process...</div>';
+
+                let topics = [];
+                let batchSize = parseInt(document.getElementById('batchSize').value);
+                const useMultiple = document.getElementById('modeToggle').checked; // Corrected id
+                
+                if (useMultiple) {
+                    const inputs = document.querySelectorAll('.topic-input');
+                    topics = Array.from(inputs).map(i => i.value.trim()).filter(v => v);
+                    batchSize = 1;
+                } else {
+                    topics = document.getElementById('topics').value.split('\n')
+                        .map(t => t.trim()).filter(t => t);
+                }
+
+                const payload = {
+                    base_prompt: document.getElementById('basePrompt').value,
+                    topics: topics,
+                    batch_size: batchSize
+                };
+
+                console.log(payload);
+
+                const response = await fetch('http://localhost:5000/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'generated_notes.md';
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i>
+                            Notes generated successfully! Check your downloads.
+                        </div>
+                    `;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate notes');
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${error.message}
+                    </div>
+                `;
+            } finally {
+                progress.classList.remove('active');
+            }
+        }
+
+    </script>
+</body>
+</html>
