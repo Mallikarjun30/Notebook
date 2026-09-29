@@ -1,0 +1,31 @@
+# --- Core backend ---
+flask
+flask-cors
+werkzeug
+
+# --- Rendering / docs (kept from original stack, still safe to keep) ---
+weasyprint
+markdown
+
+# --- PDF & OCR pipeline ---
+PyPDF2
+pdf2image
+paddleocr
+
+# --- Embeddings + Vector DB ---
+fastembed
+qdrant-client
+
+# --- LLMs & LangChain integration ---
+google-generativeai
+langchain-google-genai
+
+# --- Config / utils ---
+python-dotenv
+numpy
+pydantic>=2.0
+jinja2>=3.0.3
+setuptools>=65.5.0
+
+# --- Hugging Face Xet storage helper (from your original stack) ---
+hf_xet

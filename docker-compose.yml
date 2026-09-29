@@ -1,0 +1,31 @@
+name: notebook
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: notebook-api:latest
+    depends_on:
+      - qdrant
+
+    ports:
+      - "5000:5000"
+
+    # Docker Desktop's live-reload dev mode
+    develop:
+      watch:
+        - action: sync
+          path: ./
+          target: /app/
+        # If you change requirements, rebuild the image
+        - action: rebuild
+          path: requirements.txt
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333" # HTTP API (used by QDRANT_URL)
+      # - "6334:6334" # gRPC (optional, if you enable prefer_grpc later)
